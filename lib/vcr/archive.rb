@@ -1,3 +1,4 @@
+require 'vcr'
 require 'yaml'
 
 require 'vcr/archive/version'

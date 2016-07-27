@@ -31,6 +31,8 @@ VCR.configure do |config|
   config.default_cassette_options = { serialize_with: :vcr_archive, persist_with: :vcr_archive }
 end
 
+VCR::Archive::Persister.storage_location = '/tmp'
+
 VCR.use_cassette('vcr_cassettes/readme_example') do
   response = open('http://example.org/').read
   # ...

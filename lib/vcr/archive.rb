@@ -11,7 +11,7 @@ module VCR
 
     class Serializer
       def self.file_extension
-        'git'
+        'archive'
       end
 
       def self.serialize(hash)
@@ -22,7 +22,6 @@ module VCR
         hash
       end
     end
-
 
     module Persister
       extend self

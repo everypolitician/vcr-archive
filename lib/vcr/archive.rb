@@ -73,7 +73,7 @@ module VCR
         parts = file_name.to_s.split('.')
 
         # Get rid of the unneeded extension on the file_name
-        if parts.size > 1 && !parts.last.include?(File::SEPARATOR)
+        if parts.size > 1 && parts.last == Serializer.file_extension
           parts.pop
         end
 

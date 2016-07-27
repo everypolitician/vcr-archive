@@ -50,13 +50,27 @@ describe VCR::Archive do
 
       before { FileUtils.mkdir_p(File.dirname(path)) }
 
-      it 'reads from the given file, relative to the configured storage location' do
-        File.write(yaml_path, YAML.dump(meta['http_interactions'].first))
-        html = '<p>Hello, world.</p>'
-        File.write(html_path, html)
-        meta['http_interactions'].first['response']['body']['string'] = html
-        assert_equal meta, subject['foo']
+      describe 'existing files' do
+        before do
+          File.write(yaml_path, YAML.dump(meta['http_interactions'].first))
+          html = '<p>Hello, world.</p>'
+          File.write(html_path, html)
+          meta['http_interactions'].first['response']['body']['string'] = html
+        end
+
+        it 'reads from the given file, relative to the configured storage location' do
+          assert_equal meta, subject['foo']
+        end
+
+        it 'ignores the extension from the serializer' do
+          assert_equal meta, subject['foo.archive']
+        end
+
+        it 'returns nil for unknown extensions' do
+          assert_nil subject['foo.bar']
+        end
       end
+
 
       it 'returns nil if the directory does not exist' do
         FileUtils.rm_rf(File.dirname(path))

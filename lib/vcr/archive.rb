@@ -100,7 +100,7 @@ module VCR
       config.hook_into :webmock
       config.cassette_serializers[:yaml_separate_html] = YamlSeparateHtmlSerializer
       config.cassette_persisters[:yaml_separate_html] = YamlSeparateHtmlPersister
-      config.default_cassette_options = { serialize_with: :yaml_separate_html, persist_with: :yaml_separate_html }
+      config.default_cassette_options = { serialize_with: :yaml_separate_html, persist_with: :yaml_separate_html, record: :all }
     end
   end
 end

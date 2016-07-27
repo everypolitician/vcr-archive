@@ -22,8 +22,16 @@ Or install it yourself as:
 
 ```ruby
 require 'vcr/archive'
+require 'open-uri'
 
-VCR.use_cassette('https://github.com/everypolitician/vcr-archive') do
+VCR.configure do |config|
+  config.hook_into :webmock
+  config.cassette_serializers[:vcr_archive] = VCR::Archive::Serializer
+  config.cassette_persisters[:vcr_archive] = VCR::Archive::Persister
+  config.default_cassette_options = { serialize_with: :vcr_archive, persist_with: :vcr_archive }
+end
+
+VCR.use_cassette('vcr_cassettes/readme_example') do
   response = open('http://example.org/').read
   # ...
 end

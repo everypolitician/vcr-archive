@@ -50,12 +50,12 @@ module VCR
         path = absolute_path_to_file(file_name)
         meta['http_interactions'].each do |interaction|
           uri = URI.parse(interaction['request']['uri'])
-          path = File.join(path, uri.host, Digest::SHA1.hexdigest(uri.to_s))
-          directory = File.dirname(path)
+          file_path = File.join(path, uri.host, Digest::SHA1.hexdigest(uri.to_s))
+          directory = File.dirname(file_path)
           FileUtils.mkdir_p(directory) unless File.exist?(directory)
           body = interaction['response']['body'].delete('string')
-          File.binwrite("#{path}.yml", YAML.dump(interaction))
-          File.binwrite("#{path}.html", body)
+          File.binwrite("#{file_path}.yml", YAML.dump(interaction))
+          File.binwrite("#{file_path}.html", body)
         end
       end
 

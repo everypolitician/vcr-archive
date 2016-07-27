@@ -22,7 +22,8 @@ Or install it yourself as:
 
 ```ruby
 require 'vcr/archive'
-VCR.use_cassette('path/to/git/repo/archive') do
+
+VCR.use_cassette('https://github.com/everypolitician/vcr-archive') do
   response = open('http://example.org/').read
   # ...
 end

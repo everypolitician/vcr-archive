@@ -4,6 +4,7 @@ require 'vcr/archive/version'
 
 module VCR
   module Archive
+
     class YamlSeparateHtmlSerializer
       def self.file_extension
         'git'
@@ -21,12 +22,11 @@ module VCR
     class GitRepository
       attr_reader :url, :directory
 
-      def initialize(git_repository_url)
+      def initialize(git_repository_url, tmpdir)
         @url = git_repository_url
-        @directory = Dir.mktmpdir
+        @directory = File.join(tmpdir, url.split('/').last)
         clone_repo_if_missing!
-        Dir.chdir(directory)
-        create_or_checkout_archive_branch!
+        Dir.chdir(directory) { create_or_checkout_archive_branch! }
       end
 
       def clone_repo_if_missing!
@@ -52,8 +52,10 @@ module VCR
     module YamlSeparateHtmlPersister
       extend self
 
+      attr_accessor :git_repository_url
+
       def [](git_repository)
-        repo = repos(git_repository)
+        self.git_repository_url = git_repository
         files = Dir.glob("#{repo.directory}/**/*.yml")
         return nil if files.empty?
         interactions = files.map do |f|
@@ -68,7 +70,7 @@ module VCR
       end
 
       def []=(git_repository, meta)
-        repo = repos(git_repository)
+        self.git_repository_url = git_repository
         meta['http_interactions'].each do |interaction|
           uri = URI.parse(interaction['request']['uri'])
           path = File.join(repo.directory, uri.host, Digest::SHA1.hexdigest(uri.to_s))
@@ -84,19 +86,24 @@ module VCR
         interaction = meta['http_interactions'].first
         message = "#{interaction['response']['status'].values_at('code', 'message').join(' ')} #{interaction['request']['uri']}"
         # TODO: Use VCR hooks to run this when the cassette is ejected.
-        system("git add .")
-        system("git commit --allow-empty --message='#{message}'")
-        system("git push --quiet origin #{repo.branch_name}")
+        Dir.chdir(repo.directory) do
+          system("git add .")
+          system("git commit --allow-empty --message='#{message}'")
+          system("git push --quiet origin #{repo.branch_name}")
+        end
       end
 
       def absolute_path_to_file(storage_key)
         storage_key
       end
 
-      def repos(git_repository)
-        @repos ||= {}
+      def repo
         # VCR adds the '.git' extension from the serializer, so we need to remove it.
-        @repos[git_repository] ||= GitRepository.new(git_repository.sub!(/\.git$/, ''))
+        @repo ||= GitRepository.new(git_repository_url, tmpdir)
+      end
+
+      def tmpdir
+        @tmpdir ||= Dir.mktmpdir
       end
     end
 

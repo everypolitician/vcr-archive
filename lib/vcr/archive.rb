@@ -77,11 +77,15 @@ module VCR
           body = interaction['response']['body'].delete('string')
           File.binwrite("#{path}.yml", YAML.dump(interaction))
           File.binwrite("#{path}.html", body)
-          message = "#{interaction['response']['status'].values_at('code', 'message').join(' ')} #{interaction['request']['uri']}"
-          system("git add .")
-          system("git commit --allow-empty --message='#{message}'")
         end
+        if meta['http_interactions'].size > 1
+          warn "FIXME: More than one interaction found, using first one only for commit message"
+        end
+        interaction = meta['http_interactions'].first
+        message = "#{interaction['response']['status'].values_at('code', 'message').join(' ')} #{interaction['request']['uri']}"
         # TODO: Use VCR hooks to run this when the cassette is ejected.
+        system("git add .")
+        system("git commit --allow-empty --message='#{message}'")
         system("git push --quiet origin #{repo.branch_name}")
       end
 

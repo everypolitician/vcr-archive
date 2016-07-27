@@ -9,16 +9,18 @@ module VCR
 
     attr_accessor :git_repository_url
 
-    class Serializer
-      def self.file_extension
+    module Serializer
+      extend self
+
+      def file_extension
         'archive'
       end
 
-      def self.serialize(hash)
+      def serialize(hash)
         hash
       end
 
-      def self.deserialize(hash)
+      def deserialize(hash)
         hash
       end
     end

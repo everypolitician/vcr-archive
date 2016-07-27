@@ -61,7 +61,7 @@ module VCR
 
       def commit_all(message, &block)
         unless File.directory?(File.join(directory, '.git'))
-          system("git clone #{git_repository_url} #{directory}")
+          system("git clone --quiet #{git_repository_url} #{directory}")
         end
         Dir.chdir(directory) do
           if system("git rev-parse --verify origin/#{branch_name} > /dev/null 2>&1")

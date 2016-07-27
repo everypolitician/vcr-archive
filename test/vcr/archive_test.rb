@@ -1,8 +1,8 @@
 require 'test_helper'
 require 'open-uri'
 
-class VCR::ArchiveTest < Minitest::Test
-  def test_that_it_has_a_version_number
+describe VCR::Archive do
+  it 'has a version number' do
     refute_nil ::VCR::Archive::VERSION
   end
 end

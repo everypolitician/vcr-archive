@@ -5,7 +5,11 @@ require 'vcr/archive/version'
 module VCR
   module Archive
 
-    class YamlSeparateHtmlSerializer
+    extend self
+
+    attr_accessor :git_repository_url
+
+    class Serializer
       def self.file_extension
         'git'
       end
@@ -19,99 +23,81 @@ module VCR
       end
     end
 
-    class GitRepository
-      attr_reader :url, :directory
 
-      def initialize(git_repository_url, tmpdir)
-        @url = git_repository_url
-        @directory = File.join(tmpdir, url.split('/').last)
-        clone_repo_if_missing!
-        Dir.chdir(directory) { create_or_checkout_archive_branch! }
-      end
-
-      def clone_repo_if_missing!
-        return if File.directory?(File.join(directory, '.git'))
-        system("git clone #{url} #{directory}")
-      end
-
-      def create_or_checkout_archive_branch!
-        if system("git rev-parse --verify origin/#{branch_name} > /dev/null 2>&1")
-          system("git checkout --quiet #{branch_name}")
-        else
-          system("git checkout --orphan #{branch_name}")
-          system("git rm --quiet -rf .")
-        end
-      end
-
-      # TODO: This should be configurable
-      def branch_name
-        @branch_name ||= 'scraped-pages-archive'
-      end
-    end
-
-    module YamlSeparateHtmlPersister
+    module Persister
       extend self
 
-      attr_accessor :git_repository_url
-
-      def [](git_repository)
-        self.git_repository_url = git_repository
-        files = Dir.glob("#{repo.directory}/**/*.yml")
-        return nil if files.empty?
-        interactions = files.map do |f|
-          meta = YAML.load_file(f)
-          body = File.binread(f.sub(/\.yml$/, '.html'))
-          meta['response']['body']['string'] = body
-          meta
-        end
-        {
-          'http_interactions' => interactions,
-        }
+      def [](_)
+        nil
       end
 
-      def []=(git_repository, meta)
-        self.git_repository_url = git_repository
-        meta['http_interactions'].each do |interaction|
-          uri = URI.parse(interaction['request']['uri'])
-          path = File.join(repo.directory, uri.host, Digest::SHA1.hexdigest(uri.to_s))
-          directory = File.dirname(path)
-          FileUtils.mkdir_p(directory) unless File.exist?(directory)
-          body = interaction['response']['body'].delete('string')
-          File.binwrite("#{path}.yml", YAML.dump(interaction))
-          File.binwrite("#{path}.html", body)
-        end
-        if meta['http_interactions'].size > 1
-          warn "FIXME: More than one interaction found, using first one only for commit message"
-        end
-        interaction = meta['http_interactions'].first
-        message = "#{interaction['response']['status'].values_at('code', 'message').join(' ')} #{interaction['request']['uri']}"
-        # TODO: Use VCR hooks to run this when the cassette is ejected.
-        Dir.chdir(repo.directory) do
-          system("git add .")
-          system("git commit --allow-empty --message='#{message}'")
-          system("git push --quiet origin #{repo.branch_name}")
-        end
+      def []=(_, _)
+        nil
       end
 
       def absolute_path_to_file(storage_key)
         storage_key
       end
+    end
 
-      def repo
-        # VCR adds the '.git' extension from the serializer, so we need to remove it.
-        @repo ||= GitRepository.new(git_repository_url, tmpdir)
-      end
+    module GitRepository
+      extend self
 
       def tmpdir
         @tmpdir ||= Dir.mktmpdir
+      end
+
+      def directory
+        @directory ||= File.join(tmpdir, git_repository_url.split('/').last)
+      end
+
+      def git_repository_url
+        VCR::Archive.git_repository_url
+      end
+
+      def branch_name
+        @branch_name ||= 'scraped-pages-archive'
+      end
+
+      def commit_all(message, &block)
+        unless File.directory?(File.join(directory, '.git'))
+          system("git clone #{git_repository_url} #{directory}")
+        end
+        Dir.chdir(directory) do
+          if system("git rev-parse --verify origin/#{branch_name} > /dev/null 2>&1")
+            system("git checkout --quiet #{branch_name}")
+          else
+            system("git checkout --orphan #{branch_name}")
+            system("git rm --quiet -rf .")
+          end
+
+          yield(directory)
+
+          system("git add .")
+          system("git commit --quiet --allow-empty --message='#{message}'")
+          system("git push --quiet origin #{branch_name}")
+        end
       end
     end
 
     VCR.configure do |config|
       config.hook_into :webmock
-      config.cassette_serializers[:yaml_separate_html] = YamlSeparateHtmlSerializer
-      config.cassette_persisters[:yaml_separate_html] = YamlSeparateHtmlPersister
-      config.default_cassette_options = { serialize_with: :yaml_separate_html, persist_with: :yaml_separate_html, record: :all }
+      config.cassette_serializers[:vcr_archive] = Serializer
+      config.cassette_persisters[:vcr_archive] = Persister
+      config.default_cassette_options = { serialize_with: :vcr_archive, persist_with: :vcr_archive, record: :all }
+      config.before_record do |interaction, cassette|
+        uri = URI.parse(interaction.request.uri)
+        message = "#{interaction.response.status.to_hash.values_at('code', 'message').join(' ')} #{uri}"
+        GitRepository.commit_all(message) do |directory|
+          path = File.join(directory, uri.host, Digest::SHA1.hexdigest(uri.to_s))
+          directory = File.dirname(path)
+          FileUtils.mkdir_p(directory) unless File.exist?(directory)
+          meta = interaction.to_hash
+          body = meta['response']['body'].delete('string')
+          File.binwrite("#{path}.yml", YAML.dump(meta))
+          File.binwrite("#{path}.html", body)
+        end
+      end
     end
   end
 end

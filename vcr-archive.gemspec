@@ -5,7 +5,7 @@ require 'vcr/archive/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'vcr-archive'
-  spec.version       = Vcr::Archive::VERSION
+  spec.version       = VCR::Archive::VERSION
   spec.authors       = ['Chris Mytton']
   spec.email         = ['chrismytton@gmail.com']
 

@@ -80,8 +80,8 @@ module VCR
           message = "#{interaction['response']['status'].values_at('code', 'message').join(' ')} #{interaction['request']['uri']}"
           system("git add .")
           system("git commit --allow-empty --message='#{message}'")
-          # TODO: Use VCR hooks to run this when the cassette is ejected.
         end
+        # TODO: Use VCR hooks to run this when the cassette is ejected.
         system("git push --quiet origin #{repo.branch_name}")
       end
 

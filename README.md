@@ -1,4 +1,4 @@
-# VCR::Archive
+# VCR::Archive [![Build Status](https://travis-ci.org/everypolitician/vcr-archive.svg?branch=master)](https://travis-ci.org/everypolitician/vcr-archive)
 
 Using this gem causes VCR to record all HTTP interactions into separate files in a predictable directory structure. This allows you to maintain an archive of HTTP responses. It also stores the response body in a separate file for easier diffing.
 

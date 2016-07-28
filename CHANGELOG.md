@@ -7,12 +7,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [0.3.0] - 2016-07-28
 
-- VCR cassette format is now handled by [vcr-archive](https://github.com/everypolitician/vcr-archive), leaving this gem to handle wrapping VCR and saving to git.
-- Git interactions are now done with [ruby-git](https://github.com/schacon/ruby-git) rather than shelling out where possible.
+- Removed git support that was added in 0.2.0, see [Issue #1](https://github.com/everypolitician/vcr-archive/issues/1) for details.
+- Added tests for the `Serializer` and `Persister`.
 
 ## [0.2.0] - 2016-07-27
 
-- Working version of persisting using VCR.
+- Added support for committing the VCR cassettes to git.
 
 ## 0.1.0 - 2016-07-27
 

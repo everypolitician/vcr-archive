@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2016-09-06
+
+- Added Docker support
+
 ## [0.3.0] - 2016-07-28
 
 - Removed git support that was added in 0.2.0, see [Issue #1](https://github.com/everypolitician/vcr-archive/issues/1) for details.

@@ -1,0 +1,9 @@
+---
+vcr-archive:
+  image: vcr-archive:0.1.0
+  container_name: vcr-archive
+  volumes:
+    - ./lib:/vcr-archive/lib
+    - ./test:/vcr-archive/test
+  command: bundle exec ruby -Ilib:test test/vcr/archive_test.rb
+  tty: true
